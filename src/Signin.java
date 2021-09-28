@@ -7,10 +7,9 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class Signin {
 
-	public Signin(Connection con, String date, String status, String trainname, int passengerscount)
+	public Signin(Connection con, String date, String status, String trainname, int passengerscount, int tbill)
 			throws SQLException {
 
 		Scanner sc = new Scanner(System.in);
@@ -28,11 +27,8 @@ public class Signin {
 			if (phonenum.equals("")) {
 				System.out.println("Phone num Cannot Be Empty\n");
 			} else {
-				Pattern ptrn = Pattern.compile("(0|91)?[6-9][0-9]{9}");
 
-				Matcher m = ptrn.matcher(phonenum);
-
-				if (m.find()) {
+				if (RegularExpression.phonenum(phonenum)) {
 					flagphonenum = 0;
 				}
 
@@ -53,13 +49,9 @@ public class Signin {
 			} else {
 				flagpassword = 0;
 
-				Statement stmt = con.createStatement();
-				ResultSet rs = stmt.executeQuery("select * from signup where phonenum = '" + phonenum
-						+ "' and userpassword = '" + password + "'");
-				int count = 0;
-				while (rs.next()) {
-					count = count + 1;
-				}
+				int count = SqlQuery.CheckSignin(phonenum, password, con);
+				con.commit();
+
 				if (count == 1) {
 					System.out.println("User, Found Access Granted!");
 
@@ -67,7 +59,10 @@ public class Signin {
 					String email = obj.getemail(phonenum, password, con);
 
 					PassengerDetails obj1 = new PassengerDetails(passengerscount, phonenum, trainname, date, status,
-							email, con);
+							email,tbill, con);
+
+				//	Credits ob = new Credits(tbill, email, phonenum, con);
+
 				} else if (count > 1) {
 					System.out.println("Duplicate User, Access Denied!");
 				} else {

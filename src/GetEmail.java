@@ -8,15 +8,8 @@ public class GetEmail {
 
 	public String getemail(String phonenum,String password,Connection con) throws SQLException
 	{
-		Statement stmt = con.createStatement();
-		ResultSet rs = stmt.executeQuery(
-				"select email from signup where phonenum = '" + phonenum + "' and userpassword = '" + password + "'");
-		String email = null;
-		
-		while(rs.next())
-		{
-			email = rs.getString(1);
-		}
+		String email = SqlQuery.getEmail(phonenum, password, con);
+		con.commit();
 		return email;
 	}
 	

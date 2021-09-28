@@ -1,16 +1,19 @@
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PassengerDetails {
 
-	PassengerDetails(int passengerscount, String phonenum, String trainname, String depdate, String status,String email, Connection con)
-			throws SQLException {
+	static Queue<WaitingListQueue> q = new LinkedList<>();
+
+	PassengerDetails(int passengerscount, String phonenum, String trainname, String depdate, String status,
+			String email, int tbill, Connection con) throws SQLException {
 
 		int flagname = 1;
 		int flagage = 1;
@@ -19,25 +22,20 @@ public class PassengerDetails {
 		String name = null;
 		int age = 0;
 		String gender = null;
-		String tid = null;
-		
+		String tno = null;
+
 		Scanner sc = new Scanner(System.in);
 
-		Statement stmt = con.createStatement();
+		tno = SqlQuery.getTrainNumberWithName(trainname, con);
+		con.commit();
 
-		ResultSet rs = stmt.executeQuery("select tno from traindetails where tname = '" + trainname + "'");
-
-		while (rs.next()) {
-			tid = rs.getString(1);
-
-		}
-
-			
-		
 		for (int i = 1; i <= passengerscount; i++) {
 			flagname = 1;
 			flagage = 1;
 			flaggender = 1;
+
+			SqlQuery.Updatecount(tno, con);
+			con.commit();
 
 			while (flagname == 1) {
 
@@ -48,10 +46,8 @@ public class PassengerDetails {
 				if (name.equals("")) {
 					System.out.println("Name Cannot Be Empty\n");
 				} else {
-					Pattern p = Pattern.compile("^[a-zA-Z]*$");
-					Matcher m = p.matcher(name);
 
-					if (m.find()) {
+					if (RegularExpression.alphabet(name)) {
 						flagname = 0;
 					}
 
@@ -123,17 +119,11 @@ public class PassengerDetails {
 			}
 
 			Berth obj1 = new Berth();
-			String berth1 = obj1.berth(age, gender,tid, depdate, con);
-			
-			int tempcount = 0;
-			String pid = tid;
+			String berth1 = obj1.berth(age, gender, tno, depdate, con);
 
-			Statement stmt2 = con.createStatement();
-			ResultSet rs1 = stmt2.executeQuery("select count from tidcount where tno = '" + tid + "'");
-
-			while (rs1.next()) {
-				tempcount = rs1.getInt(1);
-			}
+			int tempcount = SqlQuery.getCount(tno, con);
+			con.commit();
+			String pid = tno;
 
 			if (tempcount > 0 && tempcount < 10) {
 				pid = pid + 0;
@@ -166,91 +156,72 @@ public class PassengerDetails {
 				pid = pid + tempcount;
 			}
 
-			
+			int result = 0;
 
-			int rstt = 0;
-			
+			int amount = tbill / passengerscount;
+
 			try {
-				
-				con.setAutoCommit(false);
-				
+
+				Credits ob1 = new Credits(amount, email, phonenum, con);
 				duppassengerdetails ob = new duppassengerdetails();
 				int temp = ob.check(name, age, gender, phonenum, email, con);
-				 
-				if(temp ==0)
-				{
-				String sql = "insert into passengerdetails (name, age, gender, phonenum, email) values('" + name + "','" + age + "','" + gender + "','" + phonenum + "','" + email + "');";
-				stmt.executeUpdate(sql);
+
+				if (temp == 0) {
+					SqlQuery.InsertPassengerDetails(name, age, gender, phonenum, email, con);
 				}
-				
-				ResultSet result = stmt.executeQuery("select id from passengerdetails where name = '" + name + "'and age = '" + age + "'and gender = '" + gender + "'and phonenum = '" + phonenum + "'");
-				
-				int id = 0;
-				while(result.next())
-				{
-					id = result.getInt(1);
-				}
-				
+
+				int id = SqlQuery.getPassengerID(name, age, gender, phonenum, email, con);
+
 				PNR obj = new PNR();
-				String pnr = obj.generateRandomPNR();
+				String pnr = obj.generateRandomPNR(con);
 				System.out.println("PNR: " + pnr);
-				String sq = "insert into passengerboardingdetails values('" + pnr + "','" + status + "','" + depdate + "','" + berth1
-					+ "','" + pid + "','" + id + "');";
 
-				rstt = stmt.executeUpdate(sq);
-				con.commit();
-				con.setAutoCommit(true);
+				if (status.equals("confirm")) {
+					result = SqlQuery.Insertpassengerboardingdetails(pnr, status, depdate, berth1, pid, id, con);
+				} else if (status.equals("waiting")) {
 
-			} catch (Exception ex) {
-				System.out.println(ex);
-				con.rollback();
-				con.setAutoCommit(true);
-			}
+					WaitingListQueue qobj = new WaitingListQueue(pnr, status, depdate, berth1, pid, id);
+					q.add(qobj);
+					SqlQuery.UpdateWaitingSeatminus(tno, depdate, con);
+					// result = SqlQuery.Insertpassengerboardingdetails(pnr, status, depdate, "WL",
+					// pid, id, con);
 
-			try{
+				}
+				if (result == 1) {
+					if (status.equals("confirm")) {
+						// SqlQuery.UpdateTotalSeatminus(tno, depdate, con);
 
-				con.setAutoCommit(false);
-				
-				if (rstt == 1) {
-				String sql5 = "update tidcount set count = count + 1 where tno = '" + tid + "'";
+						if (berth1.equals("upper")) {
 
-				if (status == "confirm") {
-					String sql1 = "update boardingdetails set tseat = tseat - 1 where tno = '" + tid + "' and depdate = '"+depdate+"'";
-					stmt.executeUpdate(sql1);
-					
-					if(berth1.equals("upper"))
-					{
-						stmt.executeUpdate("update boardingdetails set upperberth = upperberth - 1 where tno = '" + tid + "' and depdate = '"+depdate+"'");
-					}
-					else if(berth1.equals("lower"))
-					{
-						stmt.executeUpdate("update boardingdetails set lowerberth = lowerberth - 1 where tno = '" + tid + "' and depdate = '"+depdate+"'");
+							SqlQuery.UpdateUpperBerthminus(tno, depdate, con);
+
+						} else if (berth1.equals("lower")) {
+
+							SqlQuery.UpdateLowerBerthminus(tno, depdate, con);
+						}
 					}
 				}
 
-				else {
-					String sql2 = "update boardingdetails set wseat = wseat - 1 where tno = '" + tid + "' and depdate = '"+depdate+"'";
-					stmt.executeUpdate(sql2);
-				}
+//					else {
+//						  SqlQuery.UpdateWaitingSeatminus(tno, depdate, con);
+//					}
 
-				stmt.executeUpdate(sql5);
-				
-				
+				SqlQuery.Updatecount(tno, con);
 
 				con.commit();
-				con.setAutoCommit(true);
+
 				sc.nextLine();
 
+			} catch (Exception ex) {
+				for (int j = 1; j <= passengerscount; j++) {
+					SqlQuery.UpdateTotalSeatplus(tno, depdate, con);
+				}
+				System.out.println(ex);
+				con.rollback();
+
 			}
-			
-		}catch(Exception ex)
-		{
-			System.out.println(ex);
-			con.rollback();
-			con.setAutoCommit(true);
 		}
-	}
-		con.close();
+
 	}
 
 }

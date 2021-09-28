@@ -22,121 +22,155 @@ public class Rebooking {
 		String date = null;
 		String berth = null;
 
-		while (flagpnr == 1) {
+		int flagphonenum = 1;
+		int flagpassword = 1;
+		String phonenum = null;
+		String password = null;
 
-			System.out.println("PNR: ");
+		System.out.println("Sign in\n");
 
-			pnr = sc.nextLine();
+		while (flagphonenum == 1) {
+			System.out.println("Enter you Phone number");
 
-			if (pnr.equals("")) {
-				System.out.println("PNR Cannot Be Empty\n");
+			phonenum = sc.nextLine();
+
+			if (phonenum.equals("")) {
+				System.out.println("Phone num Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[a-zA-Z0-9]*$");
-				Matcher m = p.matcher(pnr);
 
-				if (m.find()) {
-
-					Statement stmt1 = con.createStatement();
-					ResultSet rs1 = stmt1.executeQuery(
-							"select status, berth, depdate from passengerboardingdetails where pnr = '" + pnr + "'");
-					while (rs1.next()) {
-						status = rs1.getString(1);
-						System.out.println("Status: " + rs1.getString(1) + "\nberth: " + rs1.getString(2)
-								+ "\ndepdate: " + rs1.getString(3));
-						berth = rs1.getString(2);
-						date = rs1.getString(3);
-					}
-
-					flagpnr = 0;
+				if (RegularExpression.phonenum(phonenum)) {
+					flagphonenum = 0;
 				}
 
 				else {
-					System.out.println("Invalid PNR Input\n");
+					System.out.println("Invalid from input\n");
 				}
 			}
-
 		}
 
-		if (status.equals("cancel")) {
-			Statement stmt1 = con.createStatement();
-			ResultSet rs1 = stmt1.executeQuery("select pid from passengerboardingdetails where pnr = '" + pnr + "'");
-			while (rs1.next()) {
-				pid = rs1.getString(1);
+		while (flagpassword == 1) {
 
-			}
+			System.out.println("Enter your password");
 
-			String tno = pid.substring(0, 5);
+			password = sc.nextLine();
 
-			int tseat = 0;
-			int wseat = 0;
-			
-			Statement stmt = con.createStatement();
-			ResultSet re = stmt.executeQuery(
-					"select tseat, wseat from boardingdetails where tno='" + tno + "' and depdate ='" + date + "'");
+			if (password.equals("")) {
+				System.out.println("password Cannot Be Empty\n");
+			} else {
 
-			while (re.next()) {
-				tseat = re.getInt(1);
-				wseat = re.getInt(2);
-			}
-			
-			if(tseat == 0 && wseat == 0)
-			{
-				System.out.println("Seats are full");
-				System.exit(0);
-			}
-
-			if (berth.equals("upper"))
-				stmt1.executeUpdate("update boardingdetails set upperberth = upperberth - 1 where tno='" + tno
-						+ "' and depdate ='" + date + "'");
-			else if (berth.equals("lower")) {
-				stmt1.executeUpdate("update boardingdetails set lowerberth = lowerberth - 1 where tno='" + tno
-						+ "' and depdate ='" + date + "'");
-
-			}
-
-			Statement stmt11 = con.createStatement();
-			ResultSet rs11 = stmt11.executeQuery("select tseat from boardingdetails where tno = '" + tno + "'");
-			int count = 0;
-			while (rs11.next()) {
-				count = rs11.getInt(1);
-
-			}
-
-			if (count > 0) {
-				Statement stmt111 = con.createStatement();
-				String sql1 = "update passengerboardingdetails set status = 'confirm' where pnr = '" + pnr + "'";
-				stmt111.executeUpdate(sql1);
-				String sql2 = "update boardingdetails set tseat = tseat - 1 where tno = '" + tno + "' and depdate = '"
-						+ date + "'";
-				stmt111.executeUpdate(sql2);
-				System.out.println("Ticket Rebooked status : confirm");
-			}
-
-			else {
-				Statement stmt111 = con.createStatement();
-				ResultSet rs111 = stmt111.executeQuery("select wseat from boardingdetails where tno = '" + tno + "'");
-				int count1 = 0;
-				while (rs111.next()) {
-					count1 = rs111.getInt(1);
-
-				}
-
-				if (count1 > 0) {
-					Statement stmt1111 = con.createStatement();
-					String sql1 = "update passengerboardingdetails set status = 'waiting' where pnr = '" + pnr + "'";
-					stmt1111.executeUpdate(sql1);
-					String sql2 = "update boardingdetails set tseat = tseat - 1 where tno = '" + tno
-							+ "' and depdate = '" + date + "'";
-					stmt111.executeUpdate(sql2);
-
-					System.out.println("Ticket Rebooked status : waiting");
-				}
-
-				else {
-					System.out.println("Inavailability of seats");
+				try {
+				
+				boolean fl = SqlQuery.CheckUser(phonenum, password, con);
+				
+				if (fl == false) {
+					System.out.println("Invalid");
 					System.exit(0);
 				}
-			}
+
+				flagpassword = 0;
+
+				while (flagpnr == 1) {
+
+					System.out.println("PNR: ");
+
+					pnr = sc.nextLine();
+
+					if (pnr.equals("")) {
+						System.out.println("PNR Cannot Be Empty\n");
+					} else {
+
+						if (RegularExpression.alphanum(pnr)) {
+
+							boolean result = CheckPNRwithPhonenum.CheckPNR(pnr, phonenum, con);
+
+							if (result == false) {
+								System.out.println("Invalid");
+							} else {
+								status = SqlQuery.getStatusPassenger(pnr, con);
+								berth = SqlQuery.getBerthPassenger(pnr, con);
+								date = SqlQuery.getdepdatePassenger(pnr, con);
+								
+								flagpnr = 0;
+							}
+						}
+
+						else {
+							System.out.println("Invalid PNR Input\n");
+						}
+					}
+
+				}
+
+				if (status.equals("cancel") && berth.equals("WL")) {
+					System.out.println("Rebooking not allowed");
+					System.exit(0);
+				}
+
+				if (status.equals("cancel")) {
+
+					pid = SqlQuery.getPIDPassenger(pnr, con);
+					
+
+					String tno = pid.substring(0, 5);
+
+					int tseat = 0;
+					int wseat = 0;
+
+					tseat = SqlQuery.getTotalSeat(tno, date, con);
+					wseat = SqlQuery.getWaitingSeat(tno, date, con);
+					
+
+					if (tseat == 0 && wseat == 0) {
+						System.out.println("Seats are full");
+						System.exit(0);
+					}
+
+					if (berth.equals("upper"))
+						SqlQuery.UpdateUpperBerthminus(tno, date, con);
+					else if (berth.equals("lower")) {
+
+						SqlQuery.UpdateLowerBerthminus(tno, date, con);
+					}
+
+					int count = SqlQuery.getTotalSeat(tno, date, con);
+
+					if (count > 0) {
+						Statement stmt111 = con.createStatement();
+
+						SqlQuery.UpdateStatusConfirm(pnr, con);
+
+						SqlQuery.UpdateTotalSeatminus(tno, date, con);
+						System.out.println("Ticket Rebooked status : confirm");
+					}
+
+					else {
+						Statement stmt111 = con.createStatement();
+
+						int countwaiting = SqlQuery.getWaitingSeat(tno, date, con);
+
+						if (countwaiting > 0) {
+
+							SqlQuery.UpdateStatusWaiting(pnr, con);
+							SqlQuery.UpdateTotalSeatminus(tno, date, con);
+							System.out.println("Ticket Rebooked status : waiting");
+						}
+
+						else {
+							System.out.println("Inavailability of seats");
+							System.exit(0);
+						}
+					}
+				}
+		
+				con.commit();
+				
+				}catch(Exception ex)
+				{
+				System.out.println(ex);
+				con.rollback();
+				
+				}
+		}
 		}
 
 	}

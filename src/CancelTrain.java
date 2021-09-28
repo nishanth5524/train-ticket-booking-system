@@ -26,10 +26,8 @@ public class CancelTrain {
 			if (tnum.equals("")) {
 				System.out.println("Train num Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("\\d");
-				Matcher m = p.matcher(tnum);
 
-				if (m.find()) {
+				if (RegularExpression.num(tnum)) {
 					flagtnum = 0;
 				}
 
@@ -50,12 +48,7 @@ public class CancelTrain {
 				System.out.println("date Cannot Be Empty\n");
 			} else {
 
-				String regex = "^\\d{4}\\-(0?[1-9]|1[012])\\-(0?[1-9]|[12][0-9]|3[01])$";
-
-				Pattern p = Pattern.compile(regex);
-				Matcher m = p.matcher(dated);
-
-				if (m.find()) {
+				if (RegularExpression.date(dated)) {
 					flagdate = 0;
 				}
 
@@ -65,30 +58,21 @@ public class CancelTrain {
 			}
 
 		}
-		
-		
-		
+
 		DBConnection cobj = new DBConnection();
 		Connection con = cobj.DB();
-		
-		try
-		{
-		con.setAutoCommit(false);	
-		
-		Statement stmt2 = con.createStatement();
-		stmt2.executeUpdate("update passengerboardingdetails set status = 'cancel' where pid LIKE '"+tnum+"%'  and depdate ='" + dated + "'");
-		stmt2.executeUpdate("delete from boardingdetails where tno = '"+tnum+"' and depdate = '" + dated + "'"); 
-		con.commit();
-		System.out.println("Done!");
-		con.setAutoCommit(true);
-		con.close();
-		}catch(Exception ex)
-		{
+
+		try {
+
+			Statement stmt2 = con.createStatement();
+			SqlQueryAdmin.updatepassengerboardingdetails(tnum, dated, con);
+			SqlQueryAdmin.deleteboardingdetails(tnum, dated, con);
+			con.commit();
+			System.out.println("Done!");
+		} catch (Exception ex) {
 			System.out.println(ex);
 			con.rollback();
-			con.setAutoCommit(true);
-			con.close();
-			
+
 		}
 	}
 

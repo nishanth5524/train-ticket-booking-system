@@ -7,10 +7,10 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class Signup {
 
-	public Signup(Connection con,String date,String status,String trainname,int passengerscount) throws SQLException {
+	public Signup(Connection con, String date, String status, String trainname, int passengerscount,int tbill)
+			throws SQLException {
 
 		String name = null;
 		String phonenum = null;
@@ -35,10 +35,8 @@ public class Signup {
 			if (phonenum.equals("")) {
 				System.out.println("Phone num Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("(0|91)?[6-9][0-9]{9}");
-				Matcher m = p.matcher(phonenum);
 
-				if (m.find()) {
+				if (RegularExpression.phonenum(phonenum)) {
 					flagphonenum = 0;
 				}
 
@@ -48,26 +46,18 @@ public class Signup {
 			}
 
 		}
-		
-		Statement stmt = con.createStatement();
-		ResultSet rs = stmt.executeQuery(
-				"select * from signup where phonenum = '" + phonenum + "'");
-		int count = 0;
-		
-		while (rs.next()) {
-			count = count + 1;
-		}
-		
-		if(count>0)
-		{
+
+		boolean count = SqlQuery.checkSignupDuplicate(phonenum, con);
+		con.commit();
+
+		if (count == true) {
 			System.out.println("user already exists");
 			System.out.println("Sign in");
-			Signin obj = new Signin(con,date,status,trainname,passengerscount);
+			Signin obj = new Signin(con, date, status, trainname, passengerscount,tbill);
 			System.exit(0);
-			
+
 		}
 
-		
 		while (flagname == 1) {
 
 			System.out.println("Name: ");
@@ -77,10 +67,8 @@ public class Signup {
 			if (name.equals("")) {
 				System.out.println("Name Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[a-zA-Z]*$");
-				Matcher m = p.matcher(name);
 
-				if (m.find()) {
+				if (RegularExpression.alphabet(name)) {
 					flagname = 0;
 				}
 
@@ -90,8 +78,6 @@ public class Signup {
 			}
 
 		}
-
-		
 
 		while (flagage == 1) {
 			System.out.println("\nEnter Age: ");
@@ -109,7 +95,7 @@ public class Signup {
 				}
 
 			} catch (Exception e) {
-				System.out.println("\nInvalid count");
+				System.out.println("\nInvalid age");
 				System.exit(0);
 			}
 		}
@@ -154,10 +140,10 @@ public class Signup {
 		}
 
 		sc.nextLine();
-		
+
 		int flagemail = 1;
 		String email = null;
-		
+
 		while (flagemail == 1) {
 
 			System.out.println("Email: ");
@@ -167,11 +153,8 @@ public class Signup {
 			if (email.equals("")) {
 				System.out.println("Email Cannot Be Empty\n");
 			} else {
-				String regex = "^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$";
-				Pattern p = Pattern.compile(regex);
-				Matcher m = p.matcher(email);
 
-				if (m.find()) {
+				if (RegularExpression.email(email)) {
 					flagemail = 0;
 				}
 
@@ -196,23 +179,20 @@ public class Signup {
 				String repassword = sc.nextLine();
 
 				if (password.equals(repassword)) {
-					System.out.println("Your account is created successfully!");
-					
-					Statement stmt1 = con.createStatement();
-					stmt1.executeUpdate("insert into signup values('" + name + "','" + phonenum + "','" + age + "','" + gender
-							+ "','" + password + "','"+email+"')");
-					
-					PassengerDetails obj = new PassengerDetails(passengerscount, phonenum, trainname, date, status,email, con);
+
+					SqlQuery.InsertSignup(name, phonenum, age, gender, repassword, email, con);
+					con.commit();
+					PassengerDetails obj = new PassengerDetails(passengerscount, phonenum, trainname, date, status,
+							email,tbill, con);
+				//	Credits ob = new Credits(tbill, email, phonenum, con);
 					flagpassword = 0;
-					
+					System.out.println("Your account is created successfully!");
 
 				} else {
 					System.out.println("Invalid");
 				}
 			}
 		}
-		
-	
 
 	}
 

@@ -9,8 +9,11 @@ import java.util.regex.Pattern;
 
 public class TravelHistory {
 
-	public TravelHistory(Connection con) throws SQLException {
+	public TravelHistory() throws Exception {
 
+		DBConnection cobj = new DBConnection();
+		Connection con = cobj.DB();
+		
 		String name = null;
 		String phonenum = null;
 		int age = 0;
@@ -34,10 +37,8 @@ public class TravelHistory {
 			if (name.equals("")) {
 				System.out.println("Name Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[a-zA-Z]*$");
-				Matcher m = p.matcher(name);
-
-				if (m.find()) {
+				
+				if (RegularExpression.alphabet(name)) {
 					flagname = 0;
 				}
 
@@ -119,10 +120,8 @@ public class TravelHistory {
 			if (phonenum.equals("")) {
 				System.out.println("Phone num Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("(0|91)?[6-9][0-9]{9}");
-				Matcher m = p.matcher(phonenum);
-
-				if (m.find()) {
+				
+				if (RegularExpression.phonenum(phonenum)) {
 					flagphonenum = 0;
 				}
 
@@ -133,28 +132,12 @@ public class TravelHistory {
 
 		}
 
-		int id = 0;
-		Statement stmt1 = con.createStatement();
-		ResultSet rs1 = stmt1.executeQuery("select id from passengerdetails where name = '" + name + "' and age ='"
-				+ age + "' and gender ='" + gender + "' and phonenum ='" + phonenum + "'");
-
-		while (rs1.next()) {
-			id = rs1.getInt(1);
-			System.out.println(id);
-		}
-
+		int id = SqlQuery.getPassengerID(name, age, gender, phonenum, password, con);
 		
-		Statement stmt11 = con.createStatement();
-		ResultSet rs11 = stmt11.executeQuery("select pnr, status, depdate,berth, pid from passengerboardingdetails where id = '" + id + "'");
+		SqlQuery.getInfoWithID(id,con);
 
-		while (rs11.next()) {
-			System.out.println("pnr: " + rs11.getString(1) + "\nstatus: " + rs11.getString(2) + "\ndepdate: "
-					+ rs11.getString(3) + "\nberth: " + rs11.getString(4) + "\npid: " + rs11.getString(5));
+		con.commit();
 
-			System.out.println("\n");
-		}
-		
-		con.close();
 
 	}
 }

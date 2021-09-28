@@ -10,12 +10,12 @@ public class Scheduling {
 	public Scheduling() throws Exception {
 
 		String tnum = null;
-		
+
 		String dated = null;
 		String datea = null;
 		String deptime = null;
 		String arrtime = null;
-		
+
 		int tseat = 0;
 		int wseat = 0;
 
@@ -37,10 +37,8 @@ public class Scheduling {
 			if (tnum.equals("")) {
 				System.out.println("Train num Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("\\d");
-				Matcher m = p.matcher(tnum);
 
-				if (m.find()) {
+				if (RegularExpression.num(tnum)) {
 					flagtnum = 0;
 				}
 
@@ -94,7 +92,7 @@ public class Scheduling {
 		}
 
 		sc.nextLine();
-				
+
 		while (flagdate == 1) {
 
 			System.out.println("Dep Date: ");
@@ -105,12 +103,7 @@ public class Scheduling {
 				System.out.println("date Cannot Be Empty\n");
 			} else {
 
-				String regex = "^\\d{4}\\-(0?[1-9]|1[012])\\-(0?[1-9]|[12][0-9]|3[01])$";
-
-				Pattern p = Pattern.compile(regex);
-				Matcher m = p.matcher(dated);
-
-				if (m.find()) {
+				if (RegularExpression.date(dated)) {
 					flagdate = 0;
 				}
 
@@ -132,12 +125,7 @@ public class Scheduling {
 				System.out.println("date Cannot Be Empty\n");
 			} else {
 
-				String regex = "^\\d{4}\\-(0?[1-9]|1[012])\\-(0?[1-9]|[12][0-9]|3[01])$";
-
-				Pattern p = Pattern.compile(regex);
-				Matcher m = p.matcher(datea);
-
-				if (m.find()) {
+				if (RegularExpression.date(datea)) {
 					flagdatea = 0;
 				}
 
@@ -157,10 +145,8 @@ public class Scheduling {
 			if (deptime.equals("")) {
 				System.out.println("Dep time Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])$");
-				Matcher m = p.matcher(deptime);
 
-				if (m.find()) {
+				if (RegularExpression.time(deptime)) {
 					flagdeptime = 0;
 				}
 
@@ -180,10 +166,9 @@ public class Scheduling {
 			if (arrtime.equals("")) {
 				System.out.println("Arr time Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])$");
-				Matcher m = p.matcher(arrtime);
+			
 
-				if (m.find()) {
+				if (RegularExpression.time(arrtime)) {
 					flagarrtime = 0;
 				}
 
@@ -196,7 +181,7 @@ public class Scheduling {
 
 		int flagupperberth = 1;
 		String upperberth = null;
-		
+
 		while (flagupperberth == 1) {
 
 			System.out.println("Upper berth: ");
@@ -206,10 +191,8 @@ public class Scheduling {
 			if (upperberth.equals("")) {
 				System.out.println("Upper berth Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[0-9]*$");
-				Matcher m = p.matcher(upperberth);
-
-				if (m.find()) {
+				
+				if (RegularExpression.num(upperberth)) {
 					flagupperberth = 0;
 				}
 
@@ -219,10 +202,10 @@ public class Scheduling {
 			}
 
 		}
-		
+
 		int flaglowerberth = 1;
 		String lowerberth = null;
-		
+
 		while (flaglowerberth == 1) {
 
 			System.out.println("Lower berth: ");
@@ -232,10 +215,8 @@ public class Scheduling {
 			if (lowerberth.equals("")) {
 				System.out.println("lower berth Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[0-9]*$");
-				Matcher m = p.matcher(lowerberth);
-
-				if (m.find()) {
+				
+				if (RegularExpression.num(lowerberth)) {
 					flaglowerberth = 0;
 				}
 
@@ -246,17 +227,11 @@ public class Scheduling {
 
 		}
 
-		
 		DBConnection cobj = new DBConnection();
 		Connection con = cobj.DB();
 
-		Statement stmt = con.createStatement();
-
-		String sql1 = "insert into boardingdetails values('" + tnum + "','" + tseat + "','" + wseat + "','" + dated
-				+ "','" + datea + "','" + deptime + "','" + arrtime + "','"+lowerberth+"','"+upperberth+"');";
-
-		stmt.executeUpdate(sql1);
-
+		SqlQueryAdmin.InsertBoardingdetails(tnum, tseat, wseat, dated, datea, deptime, arrtime, lowerberth, upperberth, con);
+		con.commit();
 	}
 
 }

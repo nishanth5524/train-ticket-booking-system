@@ -22,10 +22,8 @@ public class InsertTrain {
 			if (tname.equals("")) {
 				System.out.println("Name Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[a-zA-Z\\s]*$");
-				Matcher m = p.matcher(tname);
 
-				if (m.find()) {
+				if (RegularExpression.alphawithspace(tname)) {
 					flagtname = 0;
 				}
 
@@ -48,10 +46,8 @@ public class InsertTrain {
 			if (tname.equals("")) {
 				System.out.println("Number Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[0-9]*$");
-				Matcher m = p.matcher(tno);
 
-				if (m.find()) {
+				if (RegularExpression.num(tno)) {
 					flagtno = 0;
 				}
 
@@ -74,10 +70,8 @@ public class InsertTrain {
 			if (from.equals("")) {
 				System.out.println("From Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[A-Za-z]*$");
-				Matcher m = p.matcher(from);
 
-				if (m.find()) {
+				if (RegularExpression.alphabet(from)) {
 					flagfrom = 0;
 				}
 
@@ -100,10 +94,8 @@ public class InsertTrain {
 			if (to.equals("")) {
 				System.out.println("TO Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[A-Za-z]*$");
-				Matcher m = p.matcher(to);
 
-				if (m.find()) {
+				if (RegularExpression.alphabet(to)) {
 					flagto = 0;
 				}
 
@@ -117,12 +109,9 @@ public class InsertTrain {
 		DBConnection cobj = new DBConnection();
 		Connection con = cobj.DB();
 
-		Statement stmt = con.createStatement();
-
-		String sql1 = "insert into traindetails values('" + tname + "','" + tno + "','" + from + "','" + to + "');";
-
-		stmt.executeUpdate(sql1);
-
+		SqlQueryAdmin.Inserttrain(tname, tno, from, to, con);
+		con.commit();
+		
 	}
 
 }

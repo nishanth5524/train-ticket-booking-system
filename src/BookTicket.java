@@ -8,7 +8,6 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class BookTicket {
 
 	public BookTicket() throws Exception {
@@ -16,8 +15,6 @@ public class BookTicket {
 		String from = null;
 		String to = null;
 		String date = null;
-		String trainname = null;
-		String tno = null;
 
 		int flagfrom = 1;
 		int flagto = 1;
@@ -37,10 +34,8 @@ public class BookTicket {
 			if (from.equals("")) {
 				System.out.println("From Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[a-zA-Z]*$");
-				Matcher m = p.matcher(from);
 
-				if (m.find()) {
+				if (RegularExpression.alphabet(from)) {
 					flagfrom = 0;
 				}
 
@@ -59,10 +54,8 @@ public class BookTicket {
 			if (to.equals("")) {
 				System.out.println("To Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[a-zA-Z]*$");
-				Matcher m = p.matcher(to);
 
-				if (m.find()) {
+				if (RegularExpression.alphabet(to)) {
 					flagto = 0;
 				}
 
@@ -73,18 +66,9 @@ public class BookTicket {
 			}
 		}
 
-		try {
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(
-					"select tno, tname from traindetails where froml = '" + from + "' and tol ='" + to + "'");
-			while (rs.next()) {
-				tno = rs.getString(1);
-				trainname = rs.getString(2);
-			}
-		} catch (Exception ex) {
-
-			System.out.println(ex);
-		}
+		String tno = SqlQuery.getTrainNumber(from, to, con);
+		String trainname = SqlQuery.getTrainName(from, to, con);
+		con.commit();
 
 		while (flagdate == 1) {
 
@@ -95,16 +79,11 @@ public class BookTicket {
 			if (date.equals("")) {
 				System.out.println("Date Cannot Be Empty\n");
 			} else {
-				String regex = "^\\d{4}\\-(0?[1-9]|1[012])\\-(0?[1-9]|[12][0-9]|3[01])$";
-
-				Pattern p1 = Pattern.compile(regex);
-
-				Matcher m = p1.matcher(date);
 
 				Date date1 = new SimpleDateFormat("yyyy-MM-dd").parse(date);
 				Date date2 = new Date();
 
-				if (m.find()) {
+				if (RegularExpression.date(date)) {
 
 					if (date1.after(date2) == true)
 						flagdate = 0;
@@ -122,29 +101,25 @@ public class BookTicket {
 
 		try {
 			int tempcount = 0;
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery(
-					"select * from boardingdetails where tno = '" + tno + "' and depdate = '" + date + "'");
 
-			if (rs.next() == false) {
+			if (SqlQuery.checkAvailabilityofTrain(tno, date, con) == false) {
+				con.commit();
 				System.out.println("Train is not available");
 			}
 
 			else {
 
-				do {
+				if (tempcount == 0) {
+					System.out.println("Train availability list\n");
+				}
 
-					if (tempcount == 0) {
-						System.out.println("Train availability list\n");
-					}
+				tempcount++;
+				System.out.println("Train name: " + trainname);
 
-					tempcount++;
-					System.out.println("Train name: " + trainname);
-
-				} while (rs.next());
-				 PassengersCount pcobj = new PassengersCount(from, to, date, trainname, tno, con);
+				PassengersCount pcobj = new PassengersCount(from, to, date, trainname, tno, con);
 			}
 		} catch (Exception ex) {
+			con.commit();
 			System.out.println("Train is not available" + ex);
 		}
 

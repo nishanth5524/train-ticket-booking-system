@@ -9,25 +9,17 @@ import java.util.regex.Pattern;
 
 public class PassengersCount {
 
-	public PassengersCount(String from, String to, String date,String trainname, String tno, Connection con) throws SQLException {
+	public PassengersCount(String from, String to, String date, String trainname, String tno, Connection con)
+			throws SQLException {
 
 		Scanner sc = new Scanner(System.in);
 
 		int passengerscount = 0;
 
 		int flagpassengerscount = 1;
-		
-		Statement stmt = con.createStatement();
 
-		ResultSet rs = stmt.executeQuery(
-				"select tseat from boardingdetails where tno = '" + tno + "' and depdate ='" + date + "'");
-
-
-		while (rs.next()) {
-			System.out.println("Total seats available: " + rs.getInt(1));
-			
-		}
-		
+		System.out.println("Total Seats: " + SqlQuery.getTotalSeat(tno, date, con));
+		con.commit();
 		while (flagpassengerscount == 1) {
 			System.out.println("\nEnter Passengers Count: ");
 
@@ -41,15 +33,17 @@ public class PassengersCount {
 				else {
 					System.out.println("Passengers Count: " + passengerscount);
 					flagpassengerscount = 0;
-					CheckAvailabilityofSeats casobj = new CheckAvailabilityofSeats(from, to, date, con,
-							passengerscount, trainname,tno);
+
+					CheckAvailabilityofSeats casobj = new CheckAvailabilityofSeats(from, to, date, con, passengerscount,
+							trainname, tno);
 
 				}
 
 			} catch (Exception e) {
-				System.out.println("\nInvalid count");
+
+				System.out.println("\nInvalid Passenger count");
 				System.out.println(e);
-				System.exit(0);
+				// System.exit(0);
 			}
 		}
 

@@ -14,51 +14,87 @@ public class TicketStatus {
 		DBConnection cobj = new DBConnection();
 		Connection con = cobj.DB();
 
-		int flagpnr = 1;
-		String pnr = null;
+		int flagphonenum = 1;
+		int flagpassword = 1;
+		String phonenum = null;
+		String password = null;
 
-		while (flagpnr == 1) {
+		System.out.println("Sign in\n");
 
-			System.out.println("PNR: ");
+		while (flagphonenum == 1) {
+			System.out.println("Enter you Phone number");
 
-			pnr = sc.nextLine();
+			phonenum = sc.nextLine();
 
-			if (pnr.equals("")) {
-				System.out.println("PNR Cannot Be Empty\n");
+			if (phonenum.equals("")) {
+				System.out.println("Phone num Cannot Be Empty\n");
 			} else {
-				Pattern p = Pattern.compile("^[a-zA-Z0-9]*$");
-				Matcher m = p.matcher(pnr);
 
-				if (m.find()) {
-
-//					String pnrtrainname = pnr.substring(0,5);
-//
-//					Statement stmt = con.createStatement();
-//					ResultSet rs = stmt.executeQuery("select tname from traindetails where tno = '" + pnrtrainname + "'");
-//					while (rs.next()) {
-//
-//						System.out.println("Train name: " + rs.getString(1));
-//
-//					}
-
-					Statement stmt1 = con.createStatement();
-					ResultSet rs1 = stmt1.executeQuery("select status, berth, depdate from passengerboardingdetails where pnr = '" + pnr + "'");
-					while (rs1.next()) {
-
-						System.out.println("Status: " + rs1.getString(1) + "\nberth: " + rs1.getString(2) + "\ndepdate: "
-								+ rs1.getString(3));
-
-					}
-
-					flagpnr = 0;
+				if (RegularExpression.phonenum(phonenum)) {
+					flagphonenum = 0;
 				}
 
 				else {
-					System.out.println("Invalid PNR Input\n");
+					System.out.println("Invalid from input\n");
 				}
+			}
+		}
+
+		while (flagpassword == 1) {
+
+			System.out.println("Enter your password");
+
+			password = sc.nextLine();
+
+			if (password.equals("")) {
+				System.out.println("password Cannot Be Empty\n");
+			} else {
+				flagpassword = 0;
+				int flagpnr = 1;
+				String pnr = null;
+
+				boolean fl = SqlQuery.CheckUser(phonenum, password, con);
+				con.commit();
+
+				if (fl == false) {
+					System.out.println("Invalid");
+					System.exit(0);
+				}
+
+				while (flagpnr == 1) {
+
+					System.out.println("PNR: ");
+
+					pnr = sc.nextLine();
+
+					if (pnr.equals("")) {
+						System.out.println("PNR Cannot Be Empty\n");
+					} else {
+
+						if (RegularExpression.alphanum(pnr)) {
+
+							boolean result = CheckPNRwithPhonenum.CheckPNR(pnr, phonenum, con);
+
+							if (result == false) {
+								System.out.println("Invalid");
+							} else {
+
+								String status = SqlQuery.getStatusPassenger(pnr, con);
+								String berth = SqlQuery.getBerthPassenger(pnr, con);
+								String depdate = SqlQuery.getdepdatePassenger(pnr, con);
+								con.commit();
+								System.out.println("Status: " + status + "\nberth: " + berth + "\ndepdate: " + depdate);
+								flagpnr = 0;
+							}
+						} else {
+							System.out.println("Invalid PNR Input\n");
+						}
+					}
+
+				}
+
 			}
 
 		}
-
 	}
 }

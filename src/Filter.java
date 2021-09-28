@@ -8,58 +8,119 @@ import java.util.Scanner;
 public class Filter {
 
 	public void age(Scanner sc, Connection con) throws Exception {
-		System.out.println("Enter age: ");
-		int age = sc.nextInt();
 
-		Statement stmt = con.createStatement();
+		int flagage = 1;
+		int age = 0;
 
-		ResultSet rs = stmt.executeQuery(
+		while (flagage == 1) {
+			System.out.println("Enter Age");
 
-				"select count(*) from passengerdetails where age = '" + age + "'");
+			try {
+				age = sc.nextInt();
 
-		while (rs.next()) {
-			System.out.println("Count " + rs.getInt(1));
+				if (age == 0) {
+					System.out.println("Age Cannot Be Empty\n");
+				}
 
+				else {
+					flagage = 0;
+
+				}
+
+			} catch (Exception e) {
+				System.out.println("\nInvalid age");
+				System.exit(0);
+			}
 		}
+
+		SqlQueryAdmin.getAge(age, con);
+		con.commit();
 	}
 
 	public void date(Scanner sc, Connection con) throws SQLException {
+
+		sc.nextLine();
+
+		int flagdate = 1;
+		String date = null;
+		while (flagdate == 1) {
+
+			System.out.println("Dep Date: ");
+
+			date = sc.nextLine();
+
+			if (date.equals("")) {
+				System.out.println("date Cannot Be Empty\n");
+			} else {
+
+				if (RegularExpression.date(date)) {
+					flagdate = 0;
+				}
+
+				else {
+					System.out.println("Invalid Input\n");
+				}
+			}
+
+		}
 		
-		sc.nextLine();
-		System.out.println("Enter date:");
-		String date = sc.nextLine();
+		SqlQueryAdmin.getDate(date, con);
+		con.commit();
 
-		Statement stmt = con.createStatement();
-
-		ResultSet rs = stmt.executeQuery(
-
-				"select count(*) from passengerboardingdetails where depdate = '" + date + "'");
-
-		while (rs.next()) {
-			System.out.println("Count " + rs.getInt(1));
-
-		}
-	}
-	
-	public void range(Scanner sc, Connection con) throws SQLException
-	{
-		sc.nextLine();
-		System.out.println("Enter Starting range:");
-		String r1 = sc.nextLine();
-		System.out.println("Enter Ending range:");
-		String r2 = sc.nextLine();
-
-		Statement stmt = con.createStatement();
-
-		ResultSet rs1 = stmt.executeQuery("select * from passengerboardingdetails where pid > '" + r1 + "' and pid < '"+r2+"'");
-		while (rs1.next()) {
-
-			System.out.println("PID: " + rs1.getString(1) + "\nName: " + rs1.getString(2) + "\nAge: "
-					+ rs1.getString(3) + "\nGender: " + rs1.getString(4) + "\nPhone number: "
-					+ rs1.getString(5) + "\nStatus: " + rs1.getString(6));
-
-		}
-		}
 	}
 
+	public void range(Scanner sc, Connection con) throws SQLException {
+		sc.nextLine();
 
+		String r1 = null;
+		int flagr1 = 1;
+
+		while (flagr1 == 1) {
+
+			System.out.println("r1: ");
+
+			r1 = sc.nextLine();
+
+			if (r1.equals("")) {
+				System.out.println("r1 Cannot Be Empty\n");
+			} else {
+
+				if (RegularExpression.num(r1)) {
+					flagr1 = 0;
+				}
+
+				else {
+					System.out.println("Invalid r1 Input\n");
+				}
+			}
+
+		}
+
+		String r2 = null;
+		int flagr2 = 1;
+
+		while (flagr2 == 1) {
+
+			System.out.println("r2: ");
+
+			r2 = sc.nextLine();
+
+			if (r2.equals("")) {
+				System.out.println("r2 Cannot Be Empty\n");
+			} else {
+
+				if (RegularExpression.num(r2)) {
+					flagr2 = 0;
+				}
+
+				else {
+					System.out.println("Invalid r2 Input\n");
+				}
+			}
+
+		}
+
+		SqlQueryAdmin.geRange(r1, r2, con);
+		con.commit();
+	}
+}
